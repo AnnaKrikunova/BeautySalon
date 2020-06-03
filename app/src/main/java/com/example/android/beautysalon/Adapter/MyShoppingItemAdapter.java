@@ -1,0 +1,98 @@
+package com.example.android.beautysalon.Adapter;
+
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.ImageView;
+import android.widget.TextView;
+import android.content.Context;
+import android.widget.Toast;
+
+import java.util.ArrayList;
+import java.util.List;
+
+
+import com.example.android.beautysalon.Common.Common;
+import com.example.android.beautysalon.Database.CartDatabase;
+import com.example.android.beautysalon.Database.CartItem;
+import com.example.android.beautysalon.Database.DatabaseUtils;
+import com.example.android.beautysalon.Interface.IRecycleItemSelectedListener;
+import com.example.android.beautysalon.Model.ShoppingItem;
+import com.example.android.beautysalon.R;
+import com.squareup.picasso.Picasso;
+
+import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.RecyclerView;
+
+public class MyShoppingItemAdapter extends RecyclerView.Adapter<MyShoppingItemAdapter.MyViewHolder> {
+
+    Context context;
+    List<ShoppingItem> shoppingItemList;
+    CartDatabase cartDatabase;
+
+    public MyShoppingItemAdapter(Context context, List<ShoppingItem> shoppingItemList) {
+        this.context = context;
+        this.shoppingItemList = shoppingItemList;
+        cartDatabase = CartDatabase.getInstance(context);
+    }
+
+    @NonNull
+    @Override
+    public MyShoppingItemAdapter.MyViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        View itemView = LayoutInflater.from(context).inflate(R.layout.layout_shopping_item, parent, false);
+        return new MyViewHolder(itemView);
+    }
+
+    @Override
+    public void onBindViewHolder(@NonNull MyShoppingItemAdapter.MyViewHolder holder, int position) {
+        Picasso.get().load(shoppingItemList.get(position).getImage()).into(holder.img_shopping_item);
+        holder.txt_shopping_item_name.setText(Common.formatShoppingItemName(shoppingItemList.get(position).getName()));
+        holder.txt_shopping_item_price.setText(new StringBuilder("₴").append(shoppingItemList.get(position).getPrice()));
+
+        holder.setiRecycleItemSelectedListener(new IRecycleItemSelectedListener() {
+            @Override
+            public void onItemSelectedListener(View view, int position) {
+                CartItem cartItem = new CartItem();
+                cartItem.setProductId(shoppingItemList.get(position).getId());
+                cartItem.setProductName(shoppingItemList.get(position).getName());
+                cartItem.setProductPrice(shoppingItemList.get(position).getPrice());
+                cartItem.setProductImage(shoppingItemList.get(position).getImage());
+                cartItem.setProductQuantity(1);
+                cartItem.setUserPhone(Common.currentUser.getPhoneNumber());
+
+                DatabaseUtils.insertToCart(cartDatabase, cartItem);
+                Toast.makeText(context, "Added to Cart", Toast.LENGTH_SHORT).show();
+
+            }
+        });
+    }
+
+    @Override
+    public int getItemCount() {
+        return shoppingItemList.size();
+    }
+    public class MyViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
+        TextView txt_shopping_item_name, txt_shopping_item_price, txt_add_to_cart;
+        ImageView img_shopping_item;
+
+        IRecycleItemSelectedListener iRecycleItemSelectedListener;
+
+        public void setiRecycleItemSelectedListener(IRecycleItemSelectedListener iRecycleItemSelectedListener) {
+            this.iRecycleItemSelectedListener = iRecycleItemSelectedListener;
+        }
+
+        public MyViewHolder(@NonNull View itemView) {
+            super(itemView);
+            img_shopping_item = itemView.findViewById(R.id.img_shopping_item);
+            txt_shopping_item_name = itemView.findViewById(R.id.txt_name_shopping_item);
+            txt_shopping_item_price = itemView.findViewById(R.id.txt_price_shopping_item);
+            txt_add_to_cart = itemView.findViewById(R.id.txt_add_to_cart);
+            txt_add_to_cart.setOnClickListener(this);
+        }
+
+        @Override
+        public void onClick(View view) {
+            iRecycleItemSelectedListener.onItemSelectedListener(view, getAdapterPosition());
+        }
+    }
+}
